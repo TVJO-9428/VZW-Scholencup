@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="nl-BE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wachtwoord – Schoolcup-portaal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/stijl.css"><link rel="icon" href="assets/logo.webp">
+<script>window.__hash = location.hash;</script>
+</head>
+<body>
+<header class="schild"><div class="wrap"><div class="kop2">
+  <img src="assets/logo.webp" alt="Logo Verbroedering Schoolcup Zwijndrecht">
+  <div><h1>Schoolcup-portaal</h1><p>Wachtwoord</p></div>
+</div></div></header>
+<main class="wrap"><div class="vlak smal">
+  <section id="nieuw" hidden>
+    <h2 id="nieuwTitel">Kies je wachtwoord</h2>
+    <form id="formNieuw" novalidate>
+      <label class="veld">Nieuw wachtwoord (minstens 8 tekens)<input type="password" id="pw1" autocomplete="new-password" required minlength="8"></label>
+      <label class="veld">Herhaal het wachtwoord<input type="password" id="pw2" autocomplete="new-password" required minlength="8"></label>
+      <button class="knop breed groen" type="submit">Wachtwoord opslaan</button>
+    </form>
+  </section>
+  <section id="vergeten" hidden>
+    <h2>Wachtwoord vergeten</h2>
+    <p>Vul je e-mailadres in. Je krijgt een mail met een link om een nieuw wachtwoord te kiezen.</p>
+    <form id="formVergeten" novalidate>
+      <label class="veld">E-mailadres<input type="email" id="email" autocomplete="username" required></label>
+      <button class="knop breed" type="submit">Link versturen</button>
+    </form>
+  </section>
+  <div id="msg"></div>
+  <div class="links"><a href="index.html">Terug naar aanmelden</a></div>
+</div></main>
+<script type="module">
+import { sb, melding } from "./js/supabase.js";
+const msg = document.getElementById("msg");
+const p = new URLSearchParams((window.__hash || "").replace(/^#/, ""));
+const toon = (id) => { document.getElementById("nieuw").hidden = id !== "nieuw"; document.getElementById("vergeten").hidden = id !== "vergeten"; };
+
+if (p.get("error") || p.get("error_code")) {
+  toon("vergeten");
+  melding(msg, "Deze link is verlopen of al gebruikt. Vraag hieronder een nieuwe link aan.", "rood");
+} else if (p.get("access_token")) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { toon("vergeten"); melding(msg, "De link kon niet gebruikt worden. Vraag een nieuwe link aan.", "rood"); }
+  else {
+    document.getElementById("nieuwTitel").textContent = p.get("type") === "invite" ? "Welkom! Kies je wachtwoord" : "Kies een nieuw wachtwoord";
+    toon("nieuw");
+  }
+} else {
+  toon("vergeten");
+}
+
+document.getElementById("formNieuw").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const a = document.getElementById("pw1").value, b = document.getElementById("pw2").value;
+  if (a.length < 8) return melding(msg, "Kies minstens 8 tekens.", "rood");
+  if (a !== b) return melding(msg, "De twee wachtwoorden zijn niet gelijk.", "rood");
+  const { error } = await sb.auth.updateUser({ password: a });
+  if (error) return melding(msg, "Opslaan mislukt: " + error.message, "rood");
+  melding(msg, "Wachtwoord opgeslagen. Je wordt doorgestuurd…", "groen");
+  setTimeout(() => location.replace("portaal.html"), 1200);
+});
+
+document.getElementById("formVergeten").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("email").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return melding(msg, "Vul een geldig e-mailadres in.", "rood");
+  await sb.auth.resetPasswordForEmail(email, { redirectTo: new URL("wachtwoord.html", location.href).href });
+  melding(msg, "Als dit adres gekend is, krijg je binnen enkele minuten een mail. Kijk ook in je map met ongewenste mail.", "groen");
+});
+</script>
+</body>
+</html>

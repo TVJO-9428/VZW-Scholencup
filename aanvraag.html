@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="nl-BE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deelname aanvragen – Schoolcup-portaal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/stijl.css"><link rel="icon" href="assets/logo.webp">
+</head>
+<body>
+<header class="schild"><div class="wrap"><div class="kop2">
+  <img src="assets/logo.webp" alt="Logo Verbroedering Schoolcup Zwijndrecht">
+  <div><h1>Deelname aanvragen</h1><p>Verbroedering Schoolcup Zwijndrecht</p></div>
+</div></div></header>
+<main class="wrap"><div class="vlak" style="max-width:720px">
+  <p>Na goedkeuring krijg je een mail om je wachtwoord te kiezen. Daarna vul je zelf de ploegen, spelerskernen en per speeldag de selectie, verantwoordelijke en coaches in.</p>
+  <form id="form" novalidate>
+    <label class="veld">Naam van de school<input type="text" id="naam" required maxlength="100"></label>
+    <label class="veld">Gemeente<input type="text" id="gemeente" maxlength="60"></label>
+    <div class="duo2">
+      <label class="veld">Voornaam contactpersoon<input type="text" id="voornaam" required maxlength="60"></label>
+      <label class="veld">Naam contactpersoon<input type="text" id="achternaam" required maxlength="60"></label>
+    </div>
+    <label class="veld">E-mailadres (hiermee meld je later aan)<input type="email" id="email" required maxlength="120"></label>
+    <fieldset class="veld" style="border:0;padding:0"><legend>Gewenste ploegen</legend>
+      <div class="rij">
+        <label class="check"><input type="checkbox" name="pl" value="8"> U8 (2de lj)</label>
+        <label class="check"><input type="checkbox" name="pl" value="9"> U9 (3de lj)</label>
+        <label class="check"><input type="checkbox" name="pl" value="10"> U10 (4de lj)</label>
+        <label class="check"><input type="checkbox" name="pl" value="11"> U11 (5de lj)</label>
+        <label class="check"><input type="checkbox" name="pl" value="12"> U12 (6de lj)</label>
+      </div>
+    </fieldset>
+    <!-- Valstrik voor spamrobots: blijft leeg bij echte bezoekers -->
+    <label class="verborgen" aria-hidden="true">Website<input type="text" id="website" tabindex="-1" autocomplete="off"></label>
+    <p>Met de inschrijving gaan de school en de spelers akkoord met de clubregels en de beeldregeling van Verbroedering Zwijndrecht (zie website).</p>
+    <button class="knop groen" type="submit" id="verstuur">Aanvraag versturen</button>
+  </form>
+  <div id="msg"></div>
+  <div class="links"><a href="index.html">Terug naar aanmelden</a></div>
+</div></main>
+<script type="module">
+import { functie, melding } from "./js/supabase.js";
+const msg = document.getElementById("msg"), knop = document.getElementById("verstuur");
+document.getElementById("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const v = (id) => document.getElementById(id).value.trim();
+  const body = { naam: v("naam"), gemeente: v("gemeente"), voornaam: v("voornaam"), achternaam: v("achternaam"), email: v("email"),
+    ploegen: [...document.querySelectorAll("input[name=pl]:checked")].map((x) => +x.value), website: v("website") };
+  if (!body.naam || !body.voornaam || !body.achternaam || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email))
+    return melding(msg, "Vul de naam van de school, de contactpersoon en een geldig e-mailadres in.", "rood");
+  knop.disabled = true; melding(msg, "Versturen…", "blauw");
+  try {
+    await functie("aanvraag", body);
+    document.getElementById("form").hidden = true;
+    melding(msg, "Bedankt! Je aanvraag is verstuurd. Je krijgt een bevestiging per mail; na goedkeuring volgt een mail om je wachtwoord te kiezen.", "groen");
+  } catch (err) { knop.disabled = false; melding(msg, err.message, "rood"); }
+});
+</script>
+</body>
+</html>
