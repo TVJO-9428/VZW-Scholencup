@@ -1,6 +1,6 @@
 // Schooldashboard (fase 3).
-import { sb, esc, melding } from "./supabase.js";
-import { CATS, FORMAT, KERN_MAX, fmtD, fmtK, fmtDT, tijd, fout, tabs, klassement, opgelost, uitslag, standTabel, jokerStatus, coachRegel } from "./gemeen.js";
+import { sb, esc, melding, functie } from "./supabase.js";
+import { CATS, FORMAT, KERN_MAX, fmtD, fmtK, fmtDT, tijd, fout, tabs, klassement, opgelost, uitslag, standTabel, jokerStatus, coachRegel, winnaar } from "./gemeen.js";
 
 export async function startSchool(ctx, schoolId, el, msg) {
   const st = { tab: (location.hash || "#overzicht").slice(1), u: null, dagId: null };
@@ -25,10 +25,16 @@ export async function startSchool(ctx, schoolId, el, msg) {
   const nu = () => ctx.nu;
   const ploegenDicht = () => ctx.ploegDeadline && nu() >= ctx.ploegDeadline;
   const kernBevroren = () => ctx.kernBevriezing && nu() >= ctx.kernBevriezing;
-  const dagBevroren = (dag) => nu() >= ctx.selDeadline(dag);
+  const finPloegen = () => mijnPloegen().filter((p) => ctx.isFinalist(p.id));
+  const alleDagen = () => [...ctx.comp, ...(ctx.finale && finPloegen().length ? [ctx.finale] : [])];
+  const deadline = (dag) => (dag.code === "F" ? new Date(Math.max(...finPloegen().map((p) => ctx.finaleDeadline(p.id).getTime()))) : ctx.selDeadline(dag));
+  const dagBevroren = (dag) => nu() >= deadline(dag);
   const wedVan = (dagId) => mijnPloegen().flatMap((p) => opgelost(ctx, p.categorie).filter((m) => m.speeldag_id === dagId && (m.thuis_ploeg_id === p.id || m.uit_ploeg_id === p.id)).map((m) => ({ ...m, mijn: p })));
-  const ploegenOpDag = (dagId) => mijnPloegen().filter((p) => ctx.wedstrijden.some((m) => m.speeldag_id === dagId && (m.thuis_ploeg_id === p.id || m.uit_ploeg_id === p.id)));
+  const ploegenOpDag = (dagId) => dagId === ctx.finale?.id ? finPloegen() : mijnPloegen().filter((p) => ctx.wedstrijden.some((m) => m.speeldag_id === dagId && (m.thuis_ploeg_id === p.id || m.uit_ploeg_id === p.id)));
   const ssVan = (dagId) => ss.find((r) => r.speeldag_id === dagId);
+  const wedOpDag = (dagId) => dagId === ctx.finale?.id
+    ? ctx.wedstrijden.filter((m) => m.speeldag_id === dagId).flatMap((m) => mijnPloegen().filter((p) => m.thuis_ploeg_id === p.id || m.uit_ploeg_id === p.id).map((p) => ({ ...m, mijn: p })))
+    : wedVan(dagId);
 
   function taken() {
     const t = [];
@@ -36,7 +42,7 @@ export async function startSchool(ctx, schoolId, el, msg) {
     if (!school.ploegen_bevestigd && !ploegenDicht()) t.push({ txt: `Bevestig je ploegen vóór ${fmtK(ctx.ploegDeadline)}`, tab: "ploegen" });
     if (!kernBevroren()) mijnPloegen().forEach((p) => { const n = kern(p.id).length; if (n < FORMAT[p.categorie].max) t.push({ txt: `Kern U${p.categorie}: ${n} spelers, minstens ${FORMAT[p.categorie].max} aanbevolen (vóór ${fmtK(ctx.kernBevriezing)})`, tab: "kern" }); });
     const vd = ctx.volgendeDag();
-    if (vd && vd.code !== "F" && !dagBevroren(vd)) {
+    if (vd && (vd.code !== "F" || finPloegen().length) && !dagBevroren(vd)) {
       const pl = ploegenOpDag(vd.id), s = ssVan(vd.id);
       if (!s?.verantw_voornaam || !s?.verantw_naam) t.push({ txt: `${ctx.dagLabel(vd)}: verantwoordelijke invullen`, tab: "speeldag" });
       const cr = coachRegel(pl.map((p) => p.id), coaches.filter((c) => c.speeldag_id === vd.id), s);
@@ -49,14 +55,14 @@ export async function startSchool(ctx, schoolId, el, msg) {
   // ---------- weergaven ----------
   function vOverzicht() {
     const tk = taken(), vd = ctx.volgendeDag(), js = jokerStatus(ctx, schoolId, ss);
-    const ms = vd && vd.code !== "F" ? wedVan(vd.id).sort((a, b) => a.mijn.categorie - b.mijn.categorie || (a.slot ?? 0) - (b.slot ?? 0)) : [];
+    const ms = vd ? wedOpDag(vd.id).sort((a, b) => a.mijn.categorie - b.mijn.categorie || (a.slot ?? 0) - (b.slot ?? 0)) : [];
     return `<div class="grid">
       <div class="vlak kaart"><h3>Te doen</h3>${tk.length ? `<ul class="taken">${tk.map((x) => `<li><a href="#${x.tab}">${esc(x.txt)}</a></li>`).join("")}</ul>` : `<p class="okk">Alles in orde.</p>`}</div>
       <div class="vlak kaart"><h3>Belangrijke data</h3><ul class="data">
         ${ctx.ploegDeadline ? `<li><span>Ploegen aanpassen tot</span><b>${fmtK(ctx.ploegDeadline)}</b></li>` : ""}
         ${ctx.kernBevriezing ? `<li><span>Kern bevroren vanaf</span><b>${fmtK(ctx.kernBevriezing)}</b></li>` : ""}
         ${ctx.dagen.map((d) => `<li><span>${ctx.dagLabel(d)}</span><b>${fmtK(d.dt)}</b></li>`).join("")}</ul></div>
-      <div class="vlak kaart"><h3>Volgende speeldag</h3>${vd ? `<p><b>${esc(fmtD(vd.dt))}</b></p>${ms.length ? `<table>${ms.map((m) => `<tr><td>U${m.mijn.categorie}</td><td class="tijd">${tijd(m.aftrap)}</td><td>veld ${esc(m.veld || "")}</td><td>tegen ${esc(ctx.naamPloeg(m.thuis_ploeg_id === m.mijn.id ? m.uit_ploeg_id : m.thuis_ploeg_id))}</td></tr>`).join("")}</table>` : `<p class="klein-grijs">${vd.code === "F" ? "De finalisten zijn bekend na de laatste speeldag." : "Het speelschema is nog niet bekend."}</p>`}` : "<p>Seizoen afgelopen.</p>"}</div>
+      <div class="vlak kaart"><h3>Volgende speeldag</h3>${vd ? `<p><b>${esc(fmtD(vd.dt))}</b></p>${ms.length ? `<table>${ms.map((m) => `<tr><td>U${m.mijn.categorie}</td><td class="tijd">${tijd(m.aftrap)}</td><td>veld ${esc(m.veld || "")}</td><td>tegen ${esc(ctx.naamPloeg(m.thuis_ploeg_id === m.mijn.id ? m.uit_ploeg_id : m.thuis_ploeg_id))}</td></tr>`).join("")}</table>` : `<p class="klein-grijs">${vd.code === "F" ? (ctx.laatsteVoorbij() ? (finPloegen().length ? "Finaleplanning volgt." : "Geen ploegen in de finale. Jullie zijn welkom als supporters.") : "De finalisten zijn bekend na de laatste speeldag.") : "Het speelschema is nog niet bekend."}</p>`}` : "<p>Seizoen afgelopen.</p>"}</div>
       <div class="vlak kaart"><h3>Kernen</h3>${mijnPloegen().length ? `<table>${mijnPloegen().map((p) => { const n = kern(p.id).length; return `<tr><td>U${p.categorie}</td><td><div class="balk"><i style="width:${Math.min(100, (n / KERN_MAX) * 100)}%"></i></div></td><td class="num">${n}/${KERN_MAX}</td></tr>`; }).join("")}</table>` : "<p>Nog geen ploegen.</p>"}</div>
       <div class="vlak kaart"><h3>Klassement</h3>${mijnPloegen().length ? `<table>${mijnPloegen().map((p) => { const k = klassement(ctx, p.categorie); const i = k.rows.findIndex((r) => r.id === p.id); return `<tr><td>U${p.categorie}</td><td>${i + 1}e van ${k.rows.length}</td><td class="num">${k.rows[i]?.p ?? 0} ptn</td></tr>`; }).join("")}</table>` : "<p>—</p>"}</div>
       <div class="vlak kaart"><h3>Joker</h3><p class="${js.joker ? "letop" : "okk"}">${js.joker ? "ingezet op " + esc(ctx.dagLabel(js.joker).toLowerCase()) : "beschikbaar"}</p><p class="klein-grijs">Eén keer zonder verantwoordelijke op een competitiespeeldag. Niet op de finaledag.</p></div>
@@ -93,25 +99,26 @@ export async function startSchool(ctx, schoolId, el, msg) {
   }
 
   function vSpeeldag() {
-    const dagen = ctx.comp;
+    const dagen = alleDagen();
     if (!dagen.length) return `<div class="vlak"><p>Nog geen speeldagen.</p></div>`;
-    if (!st.dagId || !dagen.some((d) => d.id === st.dagId)) { const vd = ctx.volgendeDag(); st.dagId = vd && vd.code !== "F" ? vd.id : dagen[dagen.length - 1].id; }
+    if (!st.dagId || !dagen.some((d) => d.id === st.dagId)) { const vd = ctx.volgendeDag(); st.dagId = vd && dagen.some((d) => d.id === vd.id) ? vd.id : dagen[dagen.length - 1].id; }
     const dag = ctx.dag(st.dagId), bevr = dagBevroren(dag), dis = bevr ? "disabled" : "", s = ssVan(dag.id) || {};
     const pl = ploegenOpDag(dag.id).length ? ploegenOpDag(dag.id) : mijnPloegen();
     const dc = coaches.filter((c) => c.speeldag_id === dag.id), cr = coachRegel(pl.map((p) => p.id), dc, s), js = jokerStatus(ctx, schoolId, ss);
     let h = `<div class="vlak">${tabs(dagen.map((d) => [d.id, ctx.dagLabel(d)]), dag.id, "data-dag")}
-      <p><b>${esc(fmtD(dag.dt))}</b> · ${bevr ? `<span class="badge">bevroren sinds ${esc(fmtDT(ctx.selDeadline(dag)))}</span>` : `invullen tot ${esc(fmtDT(ctx.selDeadline(dag)))}`}</p>
+      <p><b>${esc(fmtD(dag.dt))}</b> · ${bevr ? `<span class="badge">bevroren sinds ${esc(fmtDT(deadline(dag)))}</span>` : `invullen tot ${esc(fmtDT(deadline(dag)))}`}</p>
+      ${dag.code === "F" ? `<div class="melding blauw">Proficiat! Geplaatst voor de finale met ${finPloegen().map((p) => "U" + p.categorie + (ctx.finalisten.some((f) => f.ploeg_id === p.id && f.vrijgeleide) ? " (vrijgeleide)" : "")).join(", ")}. Vul alles in vóór ${esc(fmtDT(deadline(dag)))}; anders gaat de plaats naar de volgende ploeg in het klassement. Op de finaledag geldt geen joker.</div>` : ""}
       <h3>Verantwoordelijke van de school</h3><p class="klein-grijs">Bij voorkeur de leerkracht LO; zorgt mee voor orde, netheid en discipline. Joker: ${js.joker ? "ingezet" : "beschikbaar"}.</p>
       <form class="rij" id="fLv" novalidate><input type="text" id="lvVn" value="${esc(s.verantw_voornaam || "")}" placeholder="Voornaam" aria-label="Voornaam verantwoordelijke" ${dis}>
         <input type="text" id="lvAn" value="${esc(s.verantw_naam || "")}" placeholder="Naam" aria-label="Naam verantwoordelijke" ${dis}>
         <label class="check"><input type="checkbox" id="lvLo" ${s.verantw_lo ? "checked" : ""} ${dis}> leerkracht LO</label>
         <button class="knop" type="submit" ${dis}>Opslaan</button></form></div>`;
     pl.forEach((p) => {
-      const ms = wedVan(dag.id).filter((m) => m.mijn.id === p.id).sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
+      const ms = wedOpDag(dag.id).filter((m) => m.mijn.id === p.id).sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
       const sel = selecties.filter((x) => x.ploeg_id === p.id && x.speeldag_id === dag.id).map((x) => x.speler_id), max = FORMAT[p.categorie].max;
       const cfg = ctx.cfg(dag.id, p.categorie);
       h += `<div class="vlak"><h3 style="margin-top:0">U${p.categorie} <small>${FORMAT[p.categorie].fmt} · 2 × ${cfg.minuten_helft}' · selectie ${sel.length}/${max}</small></h3>
-        ${ms.length ? `<p>${ms.map((m) => `${tijd(m.aftrap)} op veld ${esc(m.veld || "")} tegen ${esc(ctx.naamPloeg(m.thuis_ploeg_id === p.id ? m.uit_ploeg_id : m.thuis_ploeg_id))}${m.klassement ? " (klassementswedstrijd)" : ""}`).join(" · ")}</p>` : `<p class="klein-grijs">Speelschema nog niet bekend.</p>`}
+        ${ms.length ? `<p>${ms.map((m) => `${tijd(m.aftrap)} op veld ${esc(m.veld || "")} tegen ${esc(ctx.naamPloeg(m.thuis_ploeg_id === p.id ? m.uit_ploeg_id : m.thuis_ploeg_id))}${m.klassement ? " (klassementswedstrijd)" : ""}${dag.code === "F" ? " – finale" : ""}`).join(" · ")}</p>` : `<p class="klein-grijs">${dag.code === "F" ? "Uur en veld van de finale volgen." : "Speelschema nog niet bekend."}</p>`}
         <h4>Coaches (1 of 2)</h4>
         ${cr.auto === p.id ? `<div class="melding blauw">Geen coach ingevuld: verantwoordelijke ${esc(s.verantw_voornaam + " " + s.verantw_naam)} wordt automatisch coach van deze ploeg.</div>` : ""}
         ${cr.ontbrekend.includes(p.id) ? `<div class="melding rood">${cr.ontbrekend.length > 1 ? `${cr.ontbrekend.length} ploegen zonder coach. De verantwoordelijke kan er maar één overnemen.` : "Nog geen coach. Vul een coach in, of vul de verantwoordelijke in zodat die automatisch overneemt."}</div>` : ""}
@@ -130,7 +137,8 @@ export async function startSchool(ctx, schoolId, el, msg) {
       return `<div class="vlak"><h3 style="margin-top:0">U${p.categorie} <small>${FORMAT[p.categorie].fmt}</small></h3><div class="duo">
         <div class="scroll"><table><thead><tr><th>Dag</th><th>Uur</th><th>Wedstrijd</th><th>Uitslag</th></tr></thead><tbody>${ms.map((m) => { const x = uitslag(m);
           return `<tr><td>${fmtK(ctx.dag(m.speeldag_id).dt)}</td><td class="tijd">${tijd(m.aftrap)}</td><td>${esc(ctx.naamPloeg(m.thuis_ploeg_id))} – ${esc(ctx.naamPloeg(m.uit_ploeg_id))}${m.klassement ? ` <span class="badge let">klassement</span>` : ""}</td><td>${x ? (x.dubbel ? "dubbel forfait" : `${x.gt} – ${x.gu}${x.ff ? " (ff)" : ""}`) : "—"}</td></tr>`; }).join("") || `<tr><td colspan="4">Speelschema nog niet bekend.</td></tr>`}</tbody></table></div>
-        <div>${standTabel(ctx, p.categorie, p.id)}</div></div></div>`; }).join("");
+        <div>${standTabel(ctx, p.categorie, p.id)}${(() => { const f = ctx.wedstrijden.find((m) => m.speeldag_id === ctx.finale?.id && (m.thuis_ploeg_id === p.id || m.uit_ploeg_id === p.id)); if (!f) return ""; const x = uitslag(f), w = winnaar(f);
+          return `<div class="melding ${w === p.id ? "groen" : "blauw"}"><b>Finale</b> ${fmtK(ctx.finale.dt)} ${tijd(f.aftrap)}: ${esc(ctx.naamPloeg(f.thuis_ploeg_id))} – ${esc(ctx.naamPloeg(f.uit_ploeg_id))}${x ? ` · ${x.gt} – ${x.gu}${f.strafschoppen_winnaar ? " (strafschoppen)" : ""}` : ""}${w === p.id ? " · Schoolcupwinnaar! 🏆" : ""}</div>`; })()}</div></div></div>`; }).join("");
   }
 
   function vGegevens() {
@@ -171,7 +179,7 @@ export async function startSchool(ctx, schoolId, el, msg) {
       }
       return;
     }
-    if (b.dataset.act === "bevestig") return doe(async () => fout((await sb.from("scholen").update({ ploegen_bevestigd: true }).eq("id", schoolId)).error), "Ploegen bevestigd.");
+    if (b.dataset.act === "bevestig") return doe(async () => { fout((await sb.from("scholen").update({ ploegen_bevestigd: true }).eq("id", schoolId)).error); try { await functie("meldingen", { actie: "ploegen_bevestigd" }); } catch (_) { /* mail is een extraatje */ } }, "Ploegen bevestigd. Je krijgt een bevestiging per mail.");
     if (b.dataset.del) { if (!confirm("Deze speler verwijderen?")) return; return doe(async () => fout((await sb.from("spelers").delete().eq("id", b.dataset.del)).error), "Speler verwijderd."); }
   });
 

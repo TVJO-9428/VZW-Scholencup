@@ -29,9 +29,10 @@ export async function laadContext() {
     sb.rpc("schoolnamen"),
     sb.from("ploegen").select("id,school_id,categorie,seizoen"),
     sb.from("dagplanning").select("*"),
+    sb.from("finalisten").select("*"),
   ]);
   r.forEach((x) => fout(x.error));
-  const [inst, nu, dagen, namen, ploegen, plan] = r.map((x) => x.data);
+  const [inst, nu, dagen, namen, ploegen, plan, fin] = r.map((x) => x.data);
   const seizoen = inst.seizoen;
   const d = dagen.filter((x) => x.seizoen === seizoen).map((x) => ({ ...x, dt: alsDatum(x.datum) }));
   const comp = d.filter((x) => x.code !== "F");
@@ -43,6 +44,7 @@ export async function laadContext() {
     namen: Object.fromEntries((namen || []).map((s) => [s.id, s.naam])),
     ploegen: ploegen.filter((p) => p.seizoen === seizoen),
     plan,
+    finalisten: (fin || []).filter((f) => f.seizoen === seizoen),
   };
   ctx.ploeg = (id) => ctx.ploegen.find((p) => p.id === id);
   ctx.schoolVan = (pid) => ctx.ploeg(pid)?.school_id;
@@ -50,6 +52,9 @@ export async function laadContext() {
   ctx.dag = (id) => d.find((x) => x.id === id);
   ctx.dagLabel = (dag) => (dag.code === "F" ? "Finale" : "Speeldag " + dag.code);
   ctx.cfg = (dagId, u) => plan.find((p) => p.speeldag_id === dagId && p.categorie === u) || { start: "13:30", eind: "17:00", minuten_helft: u <= 9 ? 12 : 15, rust: 2, wissel: 5, velden: 1, extra_rondes: 0 };
+  ctx.isFinalist = (pid) => ctx.finalisten.some((f) => f.ploeg_id === pid);
+  ctx.finaleDeadline = (pid) => (ctx.finale ? dagenVoor(ctx.finale.dt, ctx.finalisten.some((f) => f.ploeg_id === pid && f.vrijgeleide) ? 2 : 7, 12) : null);
+  ctx.laatsteVoorbij = () => { const l = comp[comp.length - 1]; if (!l) return false; const x = new Date(l.dt); x.setDate(x.getDate() + 1); return ctx.nu >= x; };
   ctx.volgendeDag = () => { const n = new Date(ctx.nu); n.setHours(0, 0, 0, 0); return d.find((x) => x.dt >= n) || null; };
   await herlaadWedstrijden(ctx);
   return ctx;
@@ -74,7 +79,8 @@ export function uitslag(m) {
 
 // Klassement: punten, zeges, doelsaldo, gemaakte doelpunten, onderling resultaat, (loting = naam).
 export function klassement(ctx, u, alleenRegulier = false) {
-  const lijst = alleenRegulier ? ctx.wedstrijden.filter((m) => m.categorie === u && !m.klassement) : opgelost(ctx, u);
+  const fid = ctx.finale?.id;
+  const lijst = alleenRegulier ? ctx.wedstrijden.filter((m) => m.categorie === u && !m.klassement && m.speeldag_id !== fid) : opgelost(ctx, u);
   const T = {};
   ctx.ploegen.filter((p) => p.categorie === u).forEach((p) => (T[p.id] = { id: p.id, g: 0, w: 0, d: 0, v: 0, dv: 0, dt: 0, p: 0 }));
   let gesp = 0;
@@ -102,7 +108,7 @@ export function klassement(ctx, u, alleenRegulier = false) {
 
 // Klassementswedstrijden (nr. 1 – nr. 2 …) invullen zodra alle reguliere uitslagen er zijn.
 export function opgelost(ctx, u) {
-  const raw = ctx.wedstrijden.filter((m) => m.categorie === u);
+  const raw = ctx.wedstrijden.filter((m) => m.categorie === u && m.speeldag_id !== ctx.finale?.id);
   if (!raw.some((m) => m.klassement && !m.thuis_ploeg_id)) return raw;
   const regs = raw.filter((m) => !m.klassement);
   const rows = regs.length && regs.every((m) => uitslag(m)) ? klassement(ctx, u, true).rows : [];
@@ -136,3 +142,14 @@ export function coachRegel(ploegIds, coachRijen, ss) {
   const auto = zonder.length === 1 && lvOk ? zonder[0] : null;
   return { auto, ontbrekend: auto ? [] : zonder };
 }
+
+// Winnaar van een (finale)wedstrijd: ploeg-id of null.
+export function winnaar(m) {
+  const x = uitslag(m); if (!x || x.dubbel) return null;
+  if (x.gt > x.gu) return m.thuis_ploeg_id; if (x.gu > x.gt) return m.uit_ploeg_id;
+  return m.strafschoppen_winnaar || null;
+}
+
+// Derde woensdag van een maand (maand 0–11).
+export function derdeWoensdag(jaar, maand) { const d = new Date(jaar, maand, 1); const off = (3 - d.getDay() + 7) % 7; return new Date(jaar, maand, 1 + off + 14); }
+export const isoDatum = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

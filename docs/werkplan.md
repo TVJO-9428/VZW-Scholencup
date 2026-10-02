@@ -17,9 +17,9 @@ Technische keuze: gewone HTML/CSS/JavaScript zonder build-stap, supabase-js via 
 - [x] **2 – Aanvraag, goedkeuring, aanmelden** (mails wachten op Resend-domeinverificatie): aanvraagformulier, login, wachtwoord vergeten, beheerder keurt goed, mails via Resend.
 - [x] **3 – School** (te testen): overzicht, ploegen, kern, speeldag, schoolgegevens.
 - [x] **4 – Beheer** (te testen): scholen, planning per speeldag, aanwezigheid/joker, uitslagen, klassementen.
-- [ ] **5 – Finale**: finalisten, vrijgeleide, finaleplanning.
-- [ ] **6 – Mails, reglement, afwerking**: herinneringen, reglementpagina, gsm-weergave.
-- [ ] **7 – Live**: productieproject, clubsubdomein, beveiligingscontrole, back-ups.
+- [x] **5 – Finale** (te testen): finalisten, vrijgeleide, finaleplanning.
+- [x] **6 – Mails, reglement, afwerking** (te testen; mails na Resend-verificatie): herinneringen, reglementpagina, gsm-weergave.
+- [ ] **7 – Live** (draaiboek: docs/fase7-live.md): productieproject, clubsubdomein, beveiligingscontrole, back-ups.
 
 ## Fase 1 – uitvoeren
 SQL-bestanden in de map `supabase/`, telkens in Supabase › SQL Editor › New query › plakken › Run:
@@ -33,3 +33,9 @@ Zie `docs/fase2-instellingen.md`.
 
 ## Fase 3 en 4 – uitvoeren
 Zie `docs/fase3-4-testen.md`. Hosting is verhuisd naar Cloudflare (workers.dev).
+
+## Fase 5 en 6 – uitvoeren
+Zie `docs/fase5-6-instellen.md`.
+
+## Fase 7
+Zie `docs/fase7-live.md`.

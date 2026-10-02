@@ -146,3 +146,19 @@ h4{font-family:var(--kop);font-size:1.1rem;margin:14px 0 6px}
 .vast-msg{position:sticky;top:0;z-index:5}
 label input[type=number]{width:4.5em}
 form.rij{margin:6px 0}
+
+/* ---------- Fase 6: gsm en toegankelijkheid ---------- */
+@media (max-width:700px){
+  .subtabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .subtabs button{white-space:nowrap;padding:8px 10px}
+  .kop2 img{height:64px}
+  .kop2 h1{font-size:1.7rem}
+  .kop2{flex-wrap:wrap}
+  .kop2 .wie{margin-left:0;text-align:left;width:100%}
+  form.rij input[type=text],form.rij select{flex:1 1 140px}
+  .vlak{padding:14px}
+  table{font-size:.9rem}
+}
+:focus-visible{outline:3px solid var(--groen);outline-offset:2px}
+button:disabled{opacity:.55;cursor:not-allowed}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
