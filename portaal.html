@@ -14,58 +14,7 @@
   <div><h1>Schoolcup-portaal</h1><p id="sub">Laden…</p></div>
   <div class="wie" id="wie"></div>
 </div></div></header>
-<main class="wrap"><div id="msg"></div><div id="inhoud"></div></main>
-<script type="module">
-import { sb, esc, melding, functie } from "./js/supabase.js";
-const msg = document.getElementById("msg"), inhoud = document.getElementById("inhoud");
-
-const { data: { session } } = await sb.auth.getSession();
-if (!session) { location.replace("index.html"); throw new Error("niet aangemeld"); }
-document.getElementById("wie").innerHTML = `${esc(session.user.email)} <button class="knop klein" id="uit">Afmelden</button>`;
-document.getElementById("uit").onclick = async () => { await sb.auth.signOut(); location.replace("index.html"); };
-
-const { data: beh } = await sb.from("beheerders").select("user_id").maybeSingle();
-if (beh) await toonBeheer(); else await toonSchool();
-
-async function toonSchool() {
-  const { data: koppeling } = await sb.from("school_gebruikers").select("school_id, scholen(naam, contact_voornaam)").maybeSingle();
-  if (!koppeling) { document.getElementById("sub").textContent = ""; return melding(msg, "Dit account is nog niet aan een school gekoppeld. Neem contact op met de club.", "rood"); }
-  const s = koppeling.scholen;
-  document.getElementById("sub").textContent = s.naam;
-  const { data: ploegen } = await sb.from("ploegen").select("categorie").eq("school_id", koppeling.school_id).order("categorie");
-  inhoud.innerHTML = `<div class="vlak"><h2>Welkom${s.contact_voornaam ? ", " + esc(s.contact_voornaam) : ""}</h2>
-    <p>Je bent aangemeld voor <b>${esc(s.naam)}</b>.</p>
-    <p>Ingeschreven ploegen: <b>${(ploegen || []).map((p) => "U" + p.categorie).join(", ") || "nog geen"}</b></p>
-    <div class="melding blauw">Het volledige schooldashboard (ploegen, spelerskern, speeldagen) volgt in fase 3.</div></div>`;
-}
-
-async function toonBeheer() {
-  document.getElementById("sub").textContent = "Beheer";
-  const { data: aanvragen, error } = await sb.from("scholen").select("*").eq("status", "aanvraag").order("aangevraagd_op");
-  if (error) return melding(msg, "Laden mislukt: " + error.message, "rood");
-  const { data: actief } = await sb.from("scholen").select("id, naam, email, contact_voornaam, contact_naam").eq("status", "actief").order("naam");
-  inhoud.innerHTML = `<div class="vlak"><h2>Aanvragen</h2><div class="kaartlijst">${aanvragen.length ? aanvragen.map((s) => `
-    <div class="aanvraagkaart"><b>${esc(s.naam)}</b> ${s.gemeente ? "(" + esc(s.gemeente) + ")" : ""}<br>
-      ${esc(s.contact_voornaam)} ${esc(s.contact_naam)} · ${esc(s.email)}<br>
-      Gewenste ploegen: ${(s.gewenste_ploegen || []).map((u) => "U" + u).join(", ") || "—"} · aangevraagd ${new Date(s.aangevraagd_op).toLocaleDateString("nl-BE")}
-      <div class="rij" style="margin-top:8px">
-        <button class="knop groen klein" data-actie="goedkeuren" data-id="${s.id}" data-naam="${esc(s.naam)}">Goedkeuren en uitnodigen</button>
-        <button class="knop gevaar klein" data-actie="afwijzen" data-id="${s.id}" data-naam="${esc(s.naam)}">Afwijzen</button>
-      </div></div>`).join("") : "<p>Geen openstaande aanvragen.</p>"}</div></div>
-    <div class="vlak"><h2>Actieve scholen</h2><div class="scroll"><table><thead><tr><th>School</th><th>Contact</th><th>Login</th><th></th></tr></thead><tbody>
-    ${(actief || []).map((s) => `<tr><td>${esc(s.naam)}</td><td>${esc(s.contact_voornaam)} ${esc(s.contact_naam)}</td><td>${esc(s.email)}</td>
-      <td><button class="knop licht klein" data-actie="nieuwe_link" data-id="${s.id}" data-naam="${esc(s.naam)}">Nieuwe aanmeldlink sturen</button></td></tr>`).join("")}</tbody></table></div>
-    <p style="color:var(--zacht);font-size:.9rem">"Nieuwe aanmeldlink" mailt een link om een (nieuw) wachtwoord te kiezen, bv. als de uitnodiging verlopen is.</p></div>`;
-}
-
-inhoud.addEventListener("click", async (e) => {
-  const b = e.target.closest("button[data-actie]"); if (!b) return;
-  const vragen = { goedkeuren: `${b.dataset.naam} goedkeuren en een uitnodiging mailen?`, afwijzen: `De aanvraag van ${b.dataset.naam} afwijzen?`, nieuwe_link: `Een nieuwe aanmeldlink mailen naar ${b.dataset.naam}?` };
-  if (!confirm(vragen[b.dataset.actie])) return;
-  b.disabled = true; melding(msg, "Bezig…", "blauw");
-  try { const r = await functie("beheer", { actie: b.dataset.actie, school_id: b.dataset.id }); await toonBeheer(); melding(msg, r.bericht || "Gelukt.", "groen"); }
-  catch (err) { b.disabled = false; melding(msg, err.message, "rood"); }
-});
-</script>
+<main class="wrap"><div id="testklok"></div><div id="msg" class="vast-msg"></div><div id="inhoud"><p>Laden…</p></div></main>
+<script type="module" src="js/portaal.js"></script>
 </body>
 </html>

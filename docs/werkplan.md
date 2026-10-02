@@ -14,9 +14,9 @@ Technische keuze: gewone HTML/CSS/JavaScript zonder build-stap, supabase-js via 
 ## Fases
 - [x] **0 – Basis**: startpagina in huisstijl, verbinding met Supabase, Netlify gekoppeld.
 - [x] **1 – Database en beveiliging**: tabellen, Row Level Security, deadlines in de database, fictieve testdata, controlequery's die bewijzen dat scholen elkaars gegevens niet zien.
-- [ ] **2 – Aanvraag, goedkeuring, aanmelden**: aanvraagformulier, login, wachtwoord vergeten, beheerder keurt goed, mails via Resend.
-- [ ] **3 – School**: overzicht, ploegen, kern, speeldag, schoolgegevens.
-- [ ] **4 – Beheer**: scholen, planning per speeldag, aanwezigheid/joker, uitslagen, klassementen.
+- [x] **2 – Aanvraag, goedkeuring, aanmelden** (mails wachten op Resend-domeinverificatie): aanvraagformulier, login, wachtwoord vergeten, beheerder keurt goed, mails via Resend.
+- [x] **3 – School** (te testen): overzicht, ploegen, kern, speeldag, schoolgegevens.
+- [x] **4 – Beheer** (te testen): scholen, planning per speeldag, aanwezigheid/joker, uitslagen, klassementen.
 - [ ] **5 – Finale**: finalisten, vrijgeleide, finaleplanning.
 - [ ] **6 – Mails, reglement, afwerking**: herinneringen, reglementpagina, gsm-weergave.
 - [ ] **7 – Live**: productieproject, clubsubdomein, beveiligingscontrole, back-ups.
@@ -30,3 +30,6 @@ SQL-bestanden in de map `supabase/`, telkens in Supabase › SQL Editor › New 
 
 ## Fase 2 – uitvoeren
 Zie `docs/fase2-instellingen.md`.
+
+## Fase 3 en 4 – uitvoeren
+Zie `docs/fase3-4-testen.md`. Hosting is verhuisd naar Cloudflare (workers.dev).

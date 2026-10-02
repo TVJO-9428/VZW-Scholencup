@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="nl-BE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reglement en afspraken – Schoolcup-portaal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/stijl.css"><link rel="icon" href="assets/logo.webp">
+</head>
+<body>
+<header class="schild"><div class="wrap"><div class="kop2">
+  <img src="assets/logo.webp" alt="Logo Verbroedering Schoolcup Zwijndrecht">
+  <div><h1>Reglement &amp; afspraken</h1><p>Verbroedering Schoolcup Zwijndrecht</p></div>
+</div></div></header>
+<main class="wrap" id="inhoud"><p>Laden…</p></main>
+<script type="module">
+import { sb, esc } from "./js/supabase.js";
+const { data: inst } = await sb.from("speeldagen").select("*").order("datum");
+const dagen = (inst || []).map((d) => { const [y, m, dd] = d.datum.split("-").map(Number); return { ...d, dt: new Date(y, m - 1, dd) }; });
+const seizoen = dagen[0]?.seizoen ?? 2026, comp = dagen.filter((d) => d.code !== "F"), fin = dagen.find((d) => d.code === "F");
+const k = (d) => d.toLocaleDateString("nl-BE", { day: "numeric", month: "long", year: "numeric" });
+const min = (dt, n) => { const x = new Date(dt); x.setDate(x.getDate() - n); return x; };
+const rij = (u, fmt, veld, bal, dur, max) => `<tr><td><b>U${u}</b></td><td>${seizoen + 1 - u}</td><td>${u - 6}de</td><td>${fmt}</td><td>${veld}</td><td>${bal}</td><td>2 × ${dur}'</td><td class="num">${max}</td></tr>`;
+document.getElementById("inhoud").innerHTML = `
+<div class="vlak"><h2>Kalender ${seizoen}–${seizoen + 1}</h2><ul>${comp.map((d) => `<li>Speeldag ${d.code}: ${k(d.dt)}</li>`).join("")}${fin ? `<li>Finaledag: ${k(fin.dt)}</li>` : ""}</ul>
+<p>Uitwijkdatum bij onbespeelbaar terrein: de vierde woensdag van dezelfde maand.</p></div>
+<div class="vlak"><h2>Spelreglement</h2><p>Gespeeld volgens het jeugdreglement van Voetbal Vlaanderen voor de leeftijdscategorie, met een kortere speelduur zodat elke ploeg twee wedstrijden per namiddag speelt. De actuele speelduur per speeldag staat in het portaal.</p>
+<div class="scroll"><table><thead><tr><th>Categorie</th><th>Geboren</th><th>Leerjaar</th><th>Format</th><th>Terrein</th><th>Bal</th><th>Standaard speelduur</th><th class="num">Max. wedstrijdblad</th></tr></thead><tbody>
+${rij(8, "5v5", "25 × 35 m", "maat 3", 12, 8)}${rij(9, "5v5", "25 × 35 m", "maat 3", 12, 8)}${rij(10, "8v8", "30/35 × 40/50 m", "maat 4", 15, 12)}${rij(11, "8v8", "30/35 × 40/50 m", "maat 4", 15, 12)}${rij(12, "8v8", "40/45 × 50/60 m", "maat 4", 15, 12)}</tbody></table></div>
+<ul><li>Het geboortejaar bepaalt de categorie. Zittenblijvers spelen in hun oudere categorie; jongere kinderen mogen hoger spelen, nooit lager. Wie U13 is (geboren in ${seizoen - 12} of vroeger), valt buiten de Schoolcup.</li>
+<li>Gemengde ploegen: meisjes en jongens spelen samen.</li><li>Doorlopende wissels; iedereen op het wedstrijdblad speelt ongeveer evenveel. Scheenbeschermers verplicht.</li>
+<li>Elke ploeg ontmoet elke andere ploeg uit haar reeks twee keer. Op de speeldag waarop dat rond is, kunnen klassementswedstrijden volgen (nr. 1 – nr. 2, nr. 3 – nr. 4); die tellen mee.</li></ul>
+<h3>Puntentelling</h3><p>Winst 3 punten, gelijkspel 1, verlies 0. Forfait telt als 0–5.</p><p>Bij gelijke punten beslist, in deze volgorde:</p>
+<ol><li>meeste overwinningen</li><li>beste doelsaldo</li><li>meeste gemaakte doelpunten</li><li>onderling resultaat</li><li>loting door de TVJO</li></ol></div>
+<div class="vlak"><h2>Afspraken</h2>
+<h3>Inschrijving en kern</h3><ul><li>Per school per categorie maximaal één ploeg. Ploegen aanpassen kan tot ${comp[0] ? k(min(comp[0].dt, 14)) : "twee weken voor speeldag 1"}.</li>
+<li>Spelerskern van maximaal 25 spelers met voornaam, naam en geboortejaar, nodig voor de verzekering.</li>
+<li>De kern wordt bevroren op ${comp[0] ? k(min(comp[0].dt, 7)) : "één week voor speeldag 1"}. Daarna kan je enkel nog aanvullen tot 25; een aanvulling is definitief.</li></ul>
+<h3>Per speeldag</h3><ul><li>Selectie (max. 8 bij 5v5, 12 bij 8v8), verantwoordelijke en coaches invullen tot maandag 12:00 voor de speeldag.</li>
+<li>Elke school heeft een verantwoordelijke, bij voorkeur de leerkracht LO, die zorgt voor orde, netheid en discipline.</li>
+<li>Elke ploeg heeft 1 of 2 coaches: leerkrachten, ouders of familie; het oudercomité kan helpen. Heeft precies één ploeg geen coach, dan wordt de verantwoordelijke automatisch coach. Hebben meerdere ploegen geen coach, dan moet de school die aanvullen.</li>
+<li>Joker: één keer zonder verantwoordelijke op een competitiespeeldag zonder gevolg. Een tweede keer: forfait voor alle ploegen van de school die dag. Op de finaledag geldt geen joker.</li></ul>
+<h3>Finale${fin ? " – " + k(fin.dt) : ""}</h3><ul><li>De nummers 1 en 2 van elke reeks spelen de finale. Zij vullen selectie, verantwoordelijke en coach in uiterlijk één week vooraf (12:00); anders krijgt de nummer 3 een vrijgeleide.</li>
+<li>Bij gelijkspel: 5 strafschoppen per ploeg, daarna één tegen één.</li></ul>
+<h3>Clubregels en beeld</h3><ul><li>Met de inschrijving aanvaarden school, begeleiders en spelers de regels en afspraken van de clubwerking van Verbroedering Zwijndrecht.</li>
+<li>Met de inschrijving is ook akkoord gegeven voor beeldopname en -verwerking volgens de regelgeving van de club (zie website). De school informeert ouders en spelers.</li></ul>
+<h3>Wat de club voorziet</h3><ul><li>Accommodatie, organisatie, scheidsrechters, EHBO, begeleiding en een open kantine.</li></ul>
+<h3>Prijzen</h3><ul><li>De winnaar van elke reeks krijgt een wisselbeker die een jaar in de klas mag staan, en verdedigt de titel het jaar erna automatisch in dezelfde categorie.</li><li>Alle spelers uit de kern krijgen een aandenken van de club.</li></ul></div>
+<p class="klein-grijs"><a href="index.html">Naar het portaal</a></p>`;
+</script>
+</body>
+</html>

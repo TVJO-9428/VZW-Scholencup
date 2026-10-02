@@ -119,3 +119,30 @@ footer{color:var(--zacht);font-size:.85rem;padding:0 20px 30px}
 .kop2 .wie .knop{background:#fff;color:var(--navy);border:2px solid #fff;font-weight:700;margin-left:8px}
 .check{display:flex;gap:8px;align-items:center;font-weight:400}
 .knop.klein{padding:5px 10px;font-size:.85rem}
+
+/* ---------- Fase 3 en 4: dashboards ---------- */
+.subtabs{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 16px;border-bottom:2px solid var(--lijn)}
+.subtabs button{background:transparent;border:0;padding:9px 14px;font-family:var(--kop);font-size:1.1rem;font-weight:700;color:var(--zacht);cursor:pointer;border-bottom:4px solid transparent;margin-bottom:-2px}
+.subtabs button[aria-selected="true"]{color:var(--tekst);border-bottom-color:var(--groen)}
+.vlak .subtabs{margin-top:-4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.grid .vlak{margin-bottom:0}
+.kaart h3{margin-top:0}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.taken{padding-left:18px;margin:0}.taken li{margin:4px 0}.taken a{color:var(--blauw)}
+.data{list-style:none;padding:0;margin:0}.data li{display:flex;gap:10px;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--lijn)}
+.balk{height:8px;background:var(--lijn);border-radius:4px;min-width:90px}.balk i{display:block;height:100%;background:linear-gradient(90deg,var(--groen),var(--blauw));border-radius:4px}
+tr.mijn td{background:color-mix(in srgb,var(--groen) 12%,var(--vlak));font-weight:700}
+.rood{color:var(--kaart)}.okk{color:var(--groen);font-weight:700}.letop{color:var(--let);font-weight:700}
+.klein-grijs{color:var(--zacht);font-size:.88rem}
+.nr{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--navy-2);color:#fff;font-weight:700;font-size:.85rem}
+h4{font-family:var(--kop);font-size:1.1rem;margin:14px 0 6px}
+.ploegkaarten{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.ploegkaart{display:flex;flex-direction:column;gap:4px;border:2px solid var(--lijn);border-radius:10px;padding:12px 14px;font-size:.9rem;color:var(--zacht)}
+.ploegkaart b{font-family:var(--kop);font-style:italic;font-weight:800;font-size:1.8rem;color:var(--tekst);line-height:1}
+.ploegkaart.aan{border-color:var(--groen);background:color-mix(in srgb,var(--groen) 8%,var(--vlak))}
+.ploegkaart .knop{margin-top:6px;align-self:flex-start}
+.vak.aan{background:var(--groen);border-color:var(--groen);color:#fff}
+.vast-msg{position:sticky;top:0;z-index:5}
+label input[type=number]{width:4.5em}
+form.rij{margin:6px 0}
