@@ -12,7 +12,7 @@ Vaste werkwijze per fase:
 Technische keuze: gewone HTML/CSS/JavaScript zonder build-stap, supabase-js via CDN, Edge Functions via de editor in het Supabase-dashboard.
 
 ## Fases
-- [ ] **0 – Basis**: startpagina in huisstijl, verbinding met Supabase, Netlify gekoppeld.
+- [x] **0 – Basis**: startpagina in huisstijl, verbinding met Supabase, Netlify gekoppeld.
 - [ ] **1 – Database en beveiliging**: tabellen, Row Level Security, deadlines in de database, fictieve testdata, controlequery's die bewijzen dat scholen elkaars gegevens niet zien.
 - [ ] **2 – Aanvraag, goedkeuring, aanmelden**: aanvraagformulier, login, wachtwoord vergeten, beheerder keurt goed, mails via Resend.
 - [ ] **3 – School**: overzicht, ploegen, kern, speeldag, schoolgegevens.
@@ -20,3 +20,10 @@ Technische keuze: gewone HTML/CSS/JavaScript zonder build-stap, supabase-js via 
 - [ ] **5 – Finale**: finalisten, vrijgeleide, finaleplanning.
 - [ ] **6 – Mails, reglement, afwerking**: herinneringen, reglementpagina, gsm-weergave.
 - [ ] **7 – Live**: productieproject, clubsubdomein, beveiligingscontrole, back-ups.
+
+## Fase 1 – uitvoeren
+SQL-bestanden in de map `supabase/`, telkens in Supabase › SQL Editor › New query › plakken › Run:
+1. `001_database_en_beveiliging.sql` – één keer.
+2. `002_fictieve_testdata.sql` – één keer, enkel in schoolcup-dev.
+3. Drie testgebruikers aanmaken in Authentication › Users (zie bovenaan 003).
+4. `003_testgebruikers_en_controle.sql` – mag herhaald worden; alle 19 regels moeten OK zijn.
