@@ -102,3 +102,20 @@ footer{color:var(--zacht);font-size:.85rem;padding:0 20px 30px}
 .kop2 h1{font-style:italic;font-weight:800;font-size:clamp(1.9rem,5vw,3rem);margin:0;color:#fff}
 .kop2 p{margin:.2em 0 0;color:var(--zilver)}
 .status{font-size:1.1rem}
+
+/* ---------- Fase 2: formulieren en pagina's ---------- */
+.smal{max-width:520px;margin:0 auto}
+.veld{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;font-weight:700}
+.veld input,.veld select{font-weight:400;padding:9px 10px;font-size:1rem}
+.duo2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.duo2{grid-template-columns:1fr}}
+.knop.breed{width:100%;padding:11px}
+.links{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px}
+.links a{color:var(--blauw)}
+.verborgen{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.kaartlijst{display:grid;gap:10px}
+.aanvraagkaart{border:1px solid var(--lijn);border-left:5px solid var(--blauw);border-radius:8px;padding:12px 14px;background:var(--vlak)}
+.kop2 .wie{margin-left:auto;color:#fff;text-align:right}
+.kop2 .wie .knop{background:#fff;color:var(--navy);border:2px solid #fff;font-weight:700;margin-left:8px}
+.check{display:flex;gap:8px;align-items:center;font-weight:400}
+.knop.klein{padding:5px 10px;font-size:.85rem}

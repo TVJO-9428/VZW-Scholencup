@@ -1,0 +1,17 @@
+<!-- Supabase › Authentication › Emails (Templates) › Invite user -->
+<!-- Onderwerp: Je account voor de Verbroedering Schoolcup -->
+<div style="font-family:Arial,sans-serif;max-width:560px;color:#0E1A2E">
+  <h2 style="color:#0A1633">Welkom bij de Verbroedering Schoolcup</h2>
+  <p>Beste {{ .Data.voornaam }},</p>
+  <p>De aanvraag van <b>{{ .Data.school }}</b> is goedgekeurd. Klik op de knop om je wachtwoord te kiezen en aan te melden in het Schoolcup-portaal.</p>
+  <p><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#1FA64A;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold">Wachtwoord kiezen</a></p>
+  <p>Wat we daarna van je vragen:</p>
+  <ul>
+    <li>Je ploegen controleren en bevestigen vóór <b>4 november 2026</b>.</li>
+    <li>Per ploeg de spelerskern invullen (max. 25 spelers: voornaam, naam, geboortejaar) vóór <b>11 november 2026</b>. Daarna kan je enkel nog aanvullen.</li>
+    <li>Per speeldag de verantwoordelijke, de coaches en de selectie invullen, telkens tot <b>maandag 12:00</b> voor de speeldag.</li>
+  </ul>
+  <p>Deze link is 24 uur geldig. Verlopen? Gebruik "Wachtwoord vergeten" op de aanmeldpagina.</p>
+  <p>Met de inschrijving gaan de school en de spelers akkoord met de clubregels en de beeldregeling van Verbroedering Zwijndrecht (zie website).</p>
+  <p>Sportieve groeten,<br>TVJO Verbroedering Zwijndrecht</p>
+</div>
